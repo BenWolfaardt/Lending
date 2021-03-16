@@ -25,7 +25,6 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 
 	"github.com/benwolfaardt/lending/app"
-
 )
 
 func main() {

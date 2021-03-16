@@ -8,19 +8,19 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/benwolfaardt/lending/x/lending/client/cli"
+	"github.com/benwolfaardt/lending/x/lending/client/rest"
+	"github.com/benwolfaardt/lending/x/lending/keeper"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/benwolfaardt/lending/x/lending/client/cli"
-	"github.com/benwolfaardt/lending/x/lending/client/rest"
-	"github.com/benwolfaardt/lending/x/lending/keeper"
 )
 
 // Type check to ensure the interface is properly implemented
 var (
-	_ module.AppModule           = AppModule{}
-	_ module.AppModuleBasic      = AppModuleBasic{}
+	_ module.AppModule      = AppModule{}
+	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
 // AppModuleBasic defines the basic application module used by the lending module.
@@ -73,15 +73,15 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	keeper        keeper.Keeper
+	keeper keeper.Keeper
 	// TODO: Add keepers that your application depends on
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, /*TODO: Add Keepers that your application depends on*/) AppModule {
+func NewAppModule(k keeper.Keeper /*TODO: Add Keepers that your application depends on*/) AppModule {
 	return AppModule{
-		AppModuleBasic:      AppModuleBasic{},
-		keeper:              k,
+		AppModuleBasic: AppModuleBasic{},
+		keeper:         k,
 		// TODO: Add keepers that your application depends on
 	}
 }

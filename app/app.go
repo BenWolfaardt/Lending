@@ -104,9 +104,10 @@ type NewApp struct {
 var _ simapp.App = (*NewApp)(nil)
 
 // NewInitApp is a constructor function for the lending application
-func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, invCheckPeriod uint, baseAppOptions ...func(*bam.BaseApp)) *NewApp {
+func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
+	invCheckPeriod uint, baseAppOptions ...func(*bam.BaseApp)) *NewApp {
 
-	// First define the top-level codec that will be shared by the different modules
+	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
 
 	// BaseApp handles interactions with Tendermint through the ABCI protocol

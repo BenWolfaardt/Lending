@@ -3,10 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/commercionetwork/commercionetwork/x/collectdebt/internal/types"
-
-	// Page 100
-
+	"github.com/benwolfaardt/lending/x/lending/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"

@@ -2,13 +2,12 @@ package app
 
 import (
 	"encoding/json"
+	"log"
+
+	"github.com/benwolfaardt/lending/x/lending"
+
 	"io"
 	"os"
-
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	dbm "github.com/tendermint/tm-db"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -25,24 +24,21 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmos "github.com/tendermint/tendermint/libs/os"
+	dbm "github.com/tendermint/tm-db"
 )
 
 const appName = "app"
 
 var (
-	// TODO: rename your cli
+	// default home directories for the application CLI
+	DefaultCLIHome = os.ExpandEnv("$HOME/.lendingCLI")
 
-	// DefaultCLIHome default home directories for the application CLI
-	DefaultCLIHome = os.ExpandEnv("$HOME/.appcli")
+	// DefaultNodeHome sets the folder where the application data and configuration will be	stored
+	DefaultNodeHome = os.ExpandEnv("$HOME/.lendingD")
 
-	// TODO: rename your daemon
-
-	// DefaultNodeHome sets the folder where the application data and configuration will be stored
-	DefaultNodeHome = os.ExpandEnv("$HOME/.appd")
-
-	// ModuleBasics The module BasicManager is in charge of setting up basic,
-	// non-dependant module elements, such as codec registration
-	// and genesis verification.
+	// NewBasicManager is in charge of setting up basic module elemnets
 	ModuleBasics = module.NewBasicManager(
 		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
@@ -52,10 +48,9 @@ var (
 		params.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
-		// TODO: Add your module(s) AppModuleBasic
+		lending.AppModuleBasic{},
 	)
-
-	// module account permissions
+	// account permissions
 	maccPerms = map[string][]string{
 		auth.FeeCollectorName:     nil,
 		distr.ModuleName:          nil,
@@ -64,8 +59,8 @@ var (
 	}
 )
 
-// MakeCodec creates the application codec. The codec is sealed before it is
-// returned.
+// MakeCodec generates the necessary codecs for Amino
+
 func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
 
@@ -77,12 +72,9 @@ func MakeCodec() *codec.Codec {
 	return cdc.Seal()
 }
 
-// NewApp extended ABCI application
 type NewApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
-
-	invCheckPeriod uint
 
 	// keys to access the substores
 	keys  map[string]*sdk.KVStoreKey
@@ -91,7 +83,7 @@ type NewApp struct {
 	// subspaces
 	subspaces map[string]params.Subspace
 
-	// keepers
+	// Keepers
 	accountKeeper  auth.AccountKeeper
 	bankKeeper     bank.Keeper
 	stakingKeeper  staking.Keeper
@@ -99,7 +91,7 @@ type NewApp struct {
 	distrKeeper    distr.Keeper
 	supplyKeeper   supply.Keeper
 	paramsKeeper   params.Keeper
-	// TODO: Add your module(s)
+	lendingKeeper  lending.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -111,37 +103,34 @@ type NewApp struct {
 // verify app interface at compile time
 var _ simapp.App = (*NewApp)(nil)
 
-// NewlendingApp is a constructor function for lendingApp
-func NewInitApp(
-	logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, baseAppOptions ...func(*bam.BaseApp),
-) *NewApp {
-	// First define the top level codec that will be shared by the different modules
+// NewInitApp is a constructor function for the lending application
+func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, invCheckPeriod uint, baseAppOptions ...func(*bam.BaseApp)) *NewApp {
+
+	// First define the top-level codec that will be shared by the different modules
 	cdc := MakeCodec()
 
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
 	bApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
-	bApp.SetCommitMultiStoreTracer(traceStore)
+
+	// Page 111
+
 	bApp.SetAppVersion(version.Version)
 
-	// TODO: Add the keys that module requires
-	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey)
+	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey, supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, lending.StoreKey)
 
-	tKeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
+	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
 	// Here you initialize your application with the store keys it requires
 	var app = &NewApp{
-		BaseApp:        bApp,
-		cdc:            cdc,
-		invCheckPeriod: invCheckPeriod,
-		keys:           keys,
-		tKeys:          tKeys,
-		subspaces:      make(map[string]params.Subspace),
+		BaseApp:   bApp,
+		cdc:       cdc,
+		keys:      keys,
+		tKeys:     tkeys,
+		subspaces: make(map[string]params.Subspace),
 	}
 
 	// The ParamsKeeper handles parameter storage for the application
-	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tKeys[params.TStoreKey])
+	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey])
 	// Set specific supspaces
 	app.subspaces[auth.ModuleName] = app.paramsKeeper.Subspace(auth.DefaultParamspace)
 	app.subspaces[bank.ModuleName] = app.paramsKeeper.Subspace(bank.DefaultParamspace)
@@ -206,24 +195,22 @@ func NewInitApp(
 			app.slashingKeeper.Hooks()),
 	)
 
-	// TODO: Add your module(s) keepers
+	app.lendingKeeper = lending.NewKeeper(
+		keys[lending.StoreKey],
+		app.bankKeeper,
+		app.cdc,
+	)
 
-	// NOTE: Any module instantiated in the module manager that is later modified
-	// must be passed by reference here.
 	app.mm = module.NewManager(
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		auth.NewAppModule(app.accountKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
+		lending.NewAppModule(app.lendingKeeper, app.bankKeeper),
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
-		// TODO: Add your module(s)
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
-		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 	)
-	// During begin block slashing happens after distr.BeginBlocker so that
-	// there is nothing left over in the validator fee pool, so as to keep the
-	// CanWithdrawInvariant invariant.
 
 	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
 	app.mm.SetOrderEndBlockers(staking.ModuleName)
@@ -237,7 +224,7 @@ func NewInitApp(
 		auth.ModuleName,
 		bank.ModuleName,
 		slashing.ModuleName,
-		// TODO: Add your module(s)
+		lending.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,
 	)
@@ -245,7 +232,7 @@ func NewInitApp(
 	// register all module routes and module queriers
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())
 
-	// The initChainer handles translating the genesis.json file into initial state for the network
+	// The initChainer handles translating the genesis.json file into initial state for the	network
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
@@ -261,61 +248,45 @@ func NewInitApp(
 
 	// initialize stores
 	app.MountKVStores(keys)
-	app.MountTransientStores(tKeys)
+	app.MountTransientStores(tkeys)
 
-	if loadLatest {
-		err := app.LoadLatestVersion(app.keys[bam.MainStoreKey])
-		if err != nil {
-			tmos.Exit(err.Error())
-		}
+	err := app.LoadLatestVersion(app.keys[bam.MainStoreKey])
+	if err != nil {
+		tmos.Exit(err.Error())
 	}
-
 	return app
 }
 
-// GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
+// GenesisState represents chain state at the start of the chain. Any initial state	(account balances) are stored here.
 type GenesisState map[string]json.RawMessage
 
-// NewDefaultGenesisState generates the default state for the application.
 func NewDefaultGenesisState() GenesisState {
 	return ModuleBasics.DefaultGenesis()
 }
 
-// InitChainer application update at chain initialization
 func (app *NewApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
-	var genesisState simapp.GenesisState
+	var genesisState GenesisState
 
-	app.cdc.MustUnmarshalJSON(req.AppStateBytes, &genesisState)
-
+	err := app.cdc.UnmarshalJSON(req.AppStateBytes, &genesisState)
+	if err != nil {
+		panic(err)
+	}
 	return app.mm.InitGenesis(ctx, genesisState)
 }
 
-// BeginBlocker application updates every begin block
 func (app *NewApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	return app.mm.BeginBlock(ctx, req)
 }
 
-// EndBlocker application updates every end block
 func (app *NewApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return app.mm.EndBlock(ctx, req)
 }
 
-// LoadHeight loads a particular height
 func (app *NewApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
 }
 
-// ModuleAccountAddrs returns all the app's module account addresses.
-func (app *NewApp) ModuleAccountAddrs() map[string]bool {
-	modAccAddrs := make(map[string]bool)
-	for acc := range maccPerms {
-		modAccAddrs[supply.NewModuleAddress(acc).String()] = true
-	}
-
-	return modAccAddrs
-}
-
-// Codec returns the application's sealed codec.
+// Codec returns simapp’s codec
 func (app *NewApp) Codec() *codec.Codec {
 	return app.cdc
 }
@@ -325,11 +296,11 @@ func (app *NewApp) SimulationManager() *module.SimulationManager {
 	return app.sm
 }
 
-// GetMaccPerms returns a mapping of the application's module account permissions.
-func GetMaccPerms() map[string][]string {
-	modAccPerms := make(map[string][]string)
-	for k, v := range maccPerms {
-		modAccPerms[k] = v
+// ModuleAccountAddrs returns all the app’s module account addresses.
+func (app *NewApp) ModuleAccountAddrs() map[string]bool {
+	modAccAddrs := make(map[string]bool)
+	for acc := range maccPerms {
+		modAccAddrs[supply.NewModuleAddress(acc).String()] = true
 	}
-	return modAccPerms
+	return modAccAddrs
 }

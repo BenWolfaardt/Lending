@@ -2,10 +2,11 @@ package keeper
 
 import (
 	"fmt"
+
+	"github.com/benwolfaardt/lending/x/lending/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/spoto/lending/x/lending/types"
 )
 
 // Keeper of the lending platform’s store
@@ -66,6 +67,7 @@ func (keeper Keeper) getDebts(ctx sdk.Context, logic debtDiscrimination) []types
 	for ; ri.Valid(); ri.Next() {
 		var debt types.Debt
 		keeper.cdc.MustUnmarshalBinaryBare(ri.Value(), &debt)
+
 		// we only accept debts that satisfy the filter
 		if logic(debt) {
 			receivedResult = append(receivedResult, debt)
@@ -81,16 +83,14 @@ func (keeper Keeper) GetAllDebts(ctx sdk.Context) []types.Debt {
 	})
 }
 
-func (keeper Keeper) GetDebtorDebts(ctx sdk.Context, address sdk.AccAddress) []types.
-	Debt {
+func (keeper Keeper) GetDebtorDebts(ctx sdk.Context, address sdk.AccAddress) []types.Debt {
 	// we use a filter that projects on the debtor
 	return keeper.getDebts(ctx, func(debt types.Debt) bool {
 		return debt.Debtor.Equals(address)
 	})
 }
 
-func (keeper Keeper) GetCreditorDebts(ctx sdk.Context, address sdk.AccAddress) []types.
-	Debt {
+func (keeper Keeper) GetCreditorDebts(ctx sdk.Context, address sdk.AccAddress) []types.Debt {
 	// we use a filter that projects on the creditor
 	return keeper.getDebts(ctx, func(debt types.Debt) bool {
 		return debt.Creditor.Equals(address)
@@ -105,8 +105,7 @@ func (keeper Keeper) PayDebt(ctx sdk.Context, msg types.MsgPayDebt) error {
 	if !msg.Debtor.Equals(debt.Debtor) {
 		return fmt.Errorf("the debt with ID %s is not yours", msg.ID)
 	}
-	if err := keeper.bankKeeper.SendCoins(ctx, debt.Debtor, debt.Creditor, sdk.NewCoins(msg.
-		Amount)); err != nil {
+	if err := keeper.bankKeeper.SendCoins(ctx, debt.Debtor, debt.Creditor, sdk.NewCoins(msg.Amount)); err != nil {
 		return err
 	}
 	if msg.Amount.IsLT(debt.Amount) {
@@ -126,8 +125,7 @@ func (keeper Keeper) ChangeDebt(ctx sdk.Context, msg types.MsgChangeDebt) error 
 		return fmt.Errorf("the debt with ID %s is not yours", msg.ID)
 	}
 	if msg.Amount.IsGTE(debt.Amount) {
-		return fmt.Errorf("the new amount can only be smaller than the original %s", debt.
-			Amount)
+		return fmt.Errorf("the new amount can only be smaller than the original %s", debt.Amount)
 	}
 	debt.Amount = debt.Amount.Sub(msg.Amount)
 	if debt.Amount.IsNegative() {

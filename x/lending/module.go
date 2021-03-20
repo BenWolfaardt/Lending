@@ -3,18 +3,18 @@ package lending
 import (
 	"encoding/json"
 
-	"github.com/gorilla/mux"
-	"github.com/spf13/cobra"
-
-	abci "github.com/tendermint/tendermint/abci/types"
-
 	"github.com/benwolfaardt/lending/x/lending/client/cli"
 	"github.com/benwolfaardt/lending/x/lending/client/rest"
 	"github.com/benwolfaardt/lending/x/lending/keeper"
+	"github.com/benwolfaardt/lending/x/lending/types" // added
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/gorilla/mux"
+	"github.com/spf13/cobra"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 // Type check to ensure the interface is properly implemented
@@ -26,12 +26,12 @@ var (
 // AppModuleBasic defines the basic application module used by the lending module.
 type AppModuleBasic struct{}
 
-// Name returns the lending module's name.
+// Name returns the lending module’s name.
 func (AppModuleBasic) Name() string {
 	return ModuleName
 }
 
-// RegisterCodec registers the lending module's types for the given codec.
+// RegisterCodec registers the lending module’s types for the given codec.
 func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 	types.RegisterCodec(cdc)
 }
@@ -64,29 +64,27 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 // GetQueryCmd returns no root query command for the lending module.
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueryCmd(StoreKey, cdc)
+	return cli.GetQueryCmd(cdc) // changed by removing argument
 }
 
 //____________________________________________________________________________
-
 // AppModule implements an application module for the lending module.
 type AppModule struct {
 	AppModuleBasic
-
-	keeper keeper.Keeper
-	// TODO: Add keepers that your application depends on
+	keeper     keeper.Keeper
+	bankKeeper bank.Keeper // added
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper /*TODO: Add Keepers that your application depends on*/) AppModule {
+func NewAppModule(k keeper.Keeper, bankKeeper bank.Keeper) AppModule { // added parameter
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
-		// TODO: Add keepers that your application depends on
+		bankKeeper:     bankKeeper, // added
 	}
 }
 
-// Name returns the lending module's name.
+// Name returns the lending module’s name.
 func (AppModule) Name() string {
 	return types.ModuleName
 }
@@ -104,14 +102,14 @@ func (am AppModule) NewHandler() sdk.Handler {
 	return NewHandler(am.keeper)
 }
 
-// QuerierRoute returns the lending module's querier route name.
+// QuerierRoute returns the lending module’s querier route name.
 func (AppModule) QuerierRoute() string {
 	return types.QuerierRoute
 }
 
 // NewQuerierHandler returns the lending module sdk.Querier.
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return types.NewQuerier(am.keeper)
+	return NewQuerier(am.keeper) // changed package
 }
 
 // InitGenesis performs genesis initialization for the lending module. It returns

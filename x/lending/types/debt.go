@@ -3,16 +3,16 @@ package types
 import (
 	"fmt"
 	"strings"
-	
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErr "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 type Debt struct {
-	ID 			string 			'json:"ID"'
-	Debtor 		sdk.AccAddress 	'json:"debtor"'
-	Amount 		sdk.Coin 		'json:"amount"'
-	Creditor 	sdk.AccAddress 	'json:"creditor"'
+	ID       string         `json:"ID"`
+	Debtor   sdk.AccAddress `json:"debtor"`
+	Amount   sdk.Coin       `json:"amount"`
+	Creditor sdk.AccAddress `json:"creditor"`
 }
 
 func (d Debt) Validate() error {
@@ -36,10 +36,10 @@ func (d Debt) Validate() error {
 }
 
 func (d Debt) String() string {
-	return strings.TrimSpace(fmt.Sprintf('ID: %s
+	return strings.TrimSpace(fmt.Sprintf(`ID: %s
 			Debtor: %s
 			Amount: %s
-			Creditor: %s',
+			Creditor: %s`,
 		d.ID,
 		d.Debtor,
 		d.Amount,

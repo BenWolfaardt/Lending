@@ -12,10 +12,10 @@ func NewMsgCreateDebt(debt Debt) MsgCreateDebt {
 	return MsgCreateDebt(debt) // cast
 }
 
-const CreateDebtConst = “CreateDebt”
+const CreateDebtConst = "CreateDebt"
 
 func (msg MsgCreateDebt) Route() string { return RouterKey }
-func (msg MsgCreateDebt) Type() string { return CreateDebtConst }
+func (msg MsgCreateDebt) Type() string  { return CreateDebtConst }
 func (msg MsgCreateDebt) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Creditor}
 }

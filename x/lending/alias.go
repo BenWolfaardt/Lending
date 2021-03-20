@@ -23,7 +23,8 @@ var (
 	ValidateGenesis     = types.ValidateGenesis
 
 	// variable aliases
-	ModuleCdc        = types.ModuleCdc
+	ModuleCdc = types.ModuleCdc
+
 	NewMsgCreateDebt = types.NewMsgCreateDebt
 	NewMsgPayDebt    = types.NewMsgPayDebt
 	NewMsgChangeDebt = types.NewMsgChangeDebt

@@ -4,27 +4,27 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErr "github.com/cosmos/cosmos-sdk/types/errors"
 )
+
 var _ sdk.Msg = &MsgChangeDebt{}
 
 type MsgChangeDebt struct {
-	ID 			string 			'json:"id"'
-	Amount 		sdk.Coin 		'json:"amount"'
-	Creditor 	sdk.AccAddress 	'json:"creditor"'
+	ID       string         `json:"id"`
+	Amount   sdk.Coin       `json:"amount"`
+	Creditor sdk.AccAddress `json:"creditor"`
 }
 
-func NewMsgChangeDebt(id string, amount sdk.Coin, creditor sdk.AccAddress) MsgChangeDebt
-{
+func NewMsgChangeDebt(id string, amount sdk.Coin, creditor sdk.AccAddress) MsgChangeDebt {
 	return MsgChangeDebt{
-		ID: 		id,
-		Amount: 	amount,
-		Creditor: 	creditor,
+		ID:       id,
+		Amount:   amount,
+		Creditor: creditor,
 	}
 }
 
 const PayChangeConst = "ChangeDebt"
 
 func (msg MsgChangeDebt) Route() string { return RouterKey }
-func (msg MsgChangeDebt) Type() string { return PayChangeConst }
+func (msg MsgChangeDebt) Type() string  { return PayChangeConst }
 func (msg MsgChangeDebt) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Creditor}
 }
@@ -44,6 +44,6 @@ func (msg MsgChangeDebt) ValidateBasic() error {
 	if msg.Creditor.Empty() {
 		return sdkErr.Wrap(sdkErr.ErrInvalidAddress, msg.Creditor.String())
 	}
-	
+
 	return nil
 }

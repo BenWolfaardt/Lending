@@ -21,6 +21,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/crisis"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/params"
@@ -48,6 +49,7 @@ var (
 		params.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
+		crisis.AppModuleBasic{}, // added
 		lending.AppModuleBasic{},
 	)
 	// account permissions
@@ -91,6 +93,7 @@ type NewApp struct {
 	distrKeeper    distr.Keeper
 	supplyKeeper   supply.Keeper
 	paramsKeeper   params.Keeper
+	crisisKeeper   crisis.Keeper // added
 	lendingKeeper  lending.Keeper
 
 	// Module Manager
@@ -138,6 +141,7 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	app.subspaces[staking.ModuleName] = app.paramsKeeper.Subspace(staking.DefaultParamspace)
 	app.subspaces[distr.ModuleName] = app.paramsKeeper.Subspace(distr.DefaultParamspace)
 	app.subspaces[slashing.ModuleName] = app.paramsKeeper.Subspace(slashing.DefaultParamspace)
+	app.subspaces[crisis.ModuleName] = app.paramsKeeper.Subspace(crisis.DefaultParamspace) // added
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
@@ -188,6 +192,12 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.subspaces[slashing.ModuleName],
 	)
 
+	app.crisisKeeper = crisis.NewKeeper( // added
+		app.subspaces[crisis.ModuleName],
+		invCheckPeriod, app.supplyKeeper,
+		auth.FeeCollectorName,
+	)
+
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
 	app.stakingKeeper = *stakingKeeper.SetHooks(
@@ -211,10 +221,11 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+		crisis.NewAppModule(&app.crisisKeeper), // added
 	)
 
 	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName)
+	app.mm.SetOrderEndBlockers(crisis.ModuleName, staking.ModuleName) // modified
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -227,10 +238,12 @@ func NewInitApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		slashing.ModuleName,
 		lending.ModuleName,
 		supply.ModuleName,
+		crisis.ModuleName, // added
 		genutil.ModuleName,
 	)
 
 	// register all module routes and module queriers
+	app.mm.RegisterInvariants(&app.crisisKeeper) // added
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())
 
 	// The initChainer handles translating the genesis.json file into initial state for the	network

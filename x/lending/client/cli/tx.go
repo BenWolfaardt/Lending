@@ -99,6 +99,7 @@ func payDebtCmdFunc(cmd *cobra.Command, args []string, cdc *codec.Codec) error {
 
 func createDebtCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
+		Use:   "create [ID] [amount] [creditor]",
 		Short: "Creates a debt that should be collected",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {

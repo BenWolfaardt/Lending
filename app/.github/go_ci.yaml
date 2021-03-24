@@ -1,0 +1,23 @@
+name: Go-CI
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ‘1.15’
+      - name: Test
+        run: make test
+      - name: Build all
+        run: make build-all
+      - name: Publish artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: Packages
+          path: build

@@ -128,10 +128,10 @@ lint:
 ########################################
 ### Testing
 
-test: test_unit
+# test: test_unit
 
-test_unit:
-	@VERSION=$(VERSION) go test -mod=readonly $(PACKAGES_NOSIMULATION) -tags='ledger test_ledger_mock'
+# test_unit:
+# 	@VERSION=$(VERSION) go test -mod=readonly $(PACKAGES_NOSIMULATION) -tags='ledger test_ledger_mock'
 
 .PHONY: lint test test_unit go-mod-cache
 

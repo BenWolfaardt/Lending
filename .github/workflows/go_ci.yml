@@ -14,8 +14,8 @@ jobs:
           go-version: '1.15.1'
       # - name: Test
       #   run: make test
-      - name: Build all
-        run: make build-all
+      - name: Build
+        run: make build
       - name: Publish artifacts
         uses: actions/upload-artifact@v2
         with:

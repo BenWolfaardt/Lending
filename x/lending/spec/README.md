@@ -1,10 +1,12 @@
-# lending module specification
+# Lending Module Specification
 
-## Abstract
+// TODO
 
-<!-- TODO: Create a abstract definition of what this module does, what functionality does it enable and how it can be used. 
+<!-- ## Abstract -->
 
-## Contents
+<!-- TODO: Create a abstract definition of what this module does, what functionality does it enable and how it can be used.  -->
+
+<!-- ## Contents
 
 // TODO: Create the below files if they are needed.
 1. **[Concepts](01_concepts.md)**

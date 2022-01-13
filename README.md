@@ -1,6 +1,7 @@
+[![Go-CI Actions Status](https://github.com/benwolfaardt/lending/workflows/Go-CI/badge.svg)](https://github.com/benwolfaardt/lending/actions)
+
 # Lending module for Cosmos SDK
 
-This is an example of the definition of a module for the Cosmos
-SDK blockchain framework in the Go language.
+This was a test that I had to perform as part of the interviewing process to get my job at [Commercio](https://github.com/commercionetwork/commercionetwork) as a `Go` Blockchain Developer.
 
-[![Go-CI Actions Status](https://github.com/benwolfaardt/lending/workflows/Go-CI/badge.svg)](https://github.com/benwolfaardt/lending/actions)
+In this simple Blockchain dApp a standard [Cosmos SDK](https://github.com/cosmos/cosmos-sdk) Blockchain was initiated before having implemented a module definition.

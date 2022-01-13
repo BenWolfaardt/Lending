@@ -2,7 +2,7 @@
 
 ## Abstract
 
-<!-- TODO: Create a abstract definition of what this module does, what functionality does it enable and how it can be used. -->
+<!-- TODO: Create a abstract definition of what this module does, what functionality does it enable and how it can be used. 
 
 ## Contents
 
@@ -14,4 +14,4 @@
 5. **[End-Block](06_end_bloc.md)**
 6. **[05_hooks](06_hooks.md)**
 7. **[Events](07_events.md)**
-8. **[Parameters](08_params.md)**
+8. **[Parameters](08_params.md)** -->
